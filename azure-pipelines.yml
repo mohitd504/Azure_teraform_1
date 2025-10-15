@@ -16,10 +16,15 @@ stages:
         displayName: "Terraform DEV"
         steps:
           - checkout: self
-          - task: CmdLine@2
-            displayName: "Terraform Apply DEV"
+
+          # Use Azure CLI task to login via Service Connection
+          - task: AzureCLI@2
+            displayName: "Login to Azure using RD-SP"
             inputs:
-              script: |
+              azureSubscription: 'RD-SP'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
                 echo Deploying to DEV environment
                 terraform init
                 terraform plan -var-file="env/$(env).tfvars" -out=tfplan -input=false
@@ -36,10 +41,13 @@ stages:
         displayName: "Terraform UAT"
         steps:
           - checkout: self
-          - task: CmdLine@2
-            displayName: "Terraform Apply UAT"
+          - task: AzureCLI@2
+            displayName: "Login to Azure using RD-SP"
             inputs:
-              script: |
+              azureSubscription: 'RD-SP'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
                 echo Deploying to UAT environment
                 terraform init
                 terraform plan -var-file="env/$(env).tfvars" -out=tfplan -input=false
@@ -56,10 +64,13 @@ stages:
         displayName: "Terraform PROD"
         steps:
           - checkout: self
-          - task: CmdLine@2
-            displayName: "Terraform Apply PROD"
+          - task: AzureCLI@2
+            displayName: "Login to Azure using RD-SP"
             inputs:
-              script: |
+              azureSubscription: 'RD-SP'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
                 echo Deploying to PROD environment
                 terraform init
                 terraform plan -var-file="env/$(env).tfvars" -out=tfplan -input=false
