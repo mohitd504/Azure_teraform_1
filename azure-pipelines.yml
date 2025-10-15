@@ -17,12 +17,12 @@ stages:
         steps:
           - checkout: self
 
-          # Login using Service Connection RD-SP
+          # Login to Azure using Service Connection
           - task: AzureCLI@2
             displayName: "Login to Azure using RD-SP"
             inputs:
-              azureSubscription: 'RD-SP'      # Service Connection name
-              scriptType: 'ps'                # PowerShell for Windows agent
+              azureSubscription: 'RD-SP'    # Your service connection name
+              scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
                 echo "Deploying to DEV environment"
@@ -41,12 +41,11 @@ stages:
         displayName: "Terraform UAT"
         steps:
           - checkout: self
-
           - task: AzureCLI@2
             displayName: "Login to Azure using RD-SP"
             inputs:
               azureSubscription: 'RD-SP'
-              scriptType: 'ps'
+              scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
                 echo "Deploying to UAT environment"
@@ -65,12 +64,11 @@ stages:
         displayName: "Terraform PROD"
         steps:
           - checkout: self
-
           - task: AzureCLI@2
             displayName: "Login to Azure using RD-SP"
             inputs:
               azureSubscription: 'RD-SP'
-              scriptType: 'ps'
+              scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
                 echo "Deploying to PROD environment"
