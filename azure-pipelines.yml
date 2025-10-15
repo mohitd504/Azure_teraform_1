@@ -1,9 +1,9 @@
 trigger: none
 
 pool:
-  name: IRM
+  name: IRM2
   demands:
-    - Agent.Name -equals Work
+    - Agent.Name -equals Wordagent
 
 stages:
 
