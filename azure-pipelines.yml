@@ -16,16 +16,11 @@ stages:
         displayName: "Terraform DEV"
         steps:
           - checkout: self
-          - task: PowerShell@2
+          - task: CmdLine@2
             displayName: "Terraform Apply DEV"
             inputs:
-              targetType: 'inline'
-              pwsh: false  # Use Windows PowerShell
               script: |
-                # Import Security module to avoid ConvertTo-SecureString errors
-                Import-Module Microsoft.PowerShell.Security -Force
-
-                Write-Host "Deploying to DEV environment"
+                echo Deploying to DEV environment
                 terraform init
                 terraform plan -var-file="env/$(env).tfvars" -out=tfplan -input=false
                 terraform apply -input=false -auto-approve tfplan
@@ -41,14 +36,11 @@ stages:
         displayName: "Terraform UAT"
         steps:
           - checkout: self
-          - task: PowerShell@2
+          - task: CmdLine@2
             displayName: "Terraform Apply UAT"
             inputs:
-              targetType: 'inline'
-              pwsh: false
               script: |
-                Import-Module Microsoft.PowerShell.Security -Force
-                Write-Host "Deploying to UAT environment"
+                echo Deploying to UAT environment
                 terraform init
                 terraform plan -var-file="env/$(env).tfvars" -out=tfplan -input=false
                 terraform apply -input=false -auto-approve tfplan
@@ -64,14 +56,11 @@ stages:
         displayName: "Terraform PROD"
         steps:
           - checkout: self
-          - task: PowerShell@2
+          - task: CmdLine@2
             displayName: "Terraform Apply PROD"
             inputs:
-              targetType: 'inline'
-              pwsh: false
               script: |
-                Import-Module Microsoft.PowerShell.Security -Force
-                Write-Host "Deploying to PROD environment"
+                echo Deploying to PROD environment
                 terraform init
                 terraform plan -var-file="env/$(env).tfvars" -out=tfplan -input=false
                 terraform apply -input=false -auto-approve tfplan
