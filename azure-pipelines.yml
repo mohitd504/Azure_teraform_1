@@ -3,48 +3,58 @@ trigger: none
 pool:
   name: IRM
   demands:
-  - Agent.Name -equals Work
+    - Agent.Name -equals Work
 
 stages:
+
   - stage: DEV
+    displayName: "Deploy to DEV"
     variables:
-      - name: env
-        value: 'dev'
+      env: dev
     jobs:
       - job: DeployDev
+        displayName: "Terraform DEV"
         steps:
           - checkout: self
           - script: |
+              echo "Deploying to DEV environment"
               terraform init
-              terraform plan -var-file="env/$(env).tfvars" -out=tfplan
-              terraform apply -auto-approve tfplan
+              terraform plan -var-file="env/$(env).tfvars" -out=tfplan -input=false
+              terraform apply -input=false -auto-approve tfplan
+            displayName: "Terraform Apply DEV"
 
   - stage: UAT
+    displayName: "Deploy to UAT"
     dependsOn: DEV
     condition: succeeded()
     variables:
-      - name: env
-        value: 'uat'
+      env: uat
     jobs:
       - job: DeployUat
+        displayName: "Terraform UAT"
         steps:
           - checkout: self
           - script: |
+              echo "Deploying to UAT environment"
               terraform init
-              terraform plan -var-file="env/$(env).tfvars" -out=tfplan
-              terraform apply -auto-approve tfplan
+              terraform plan -var-file="env/$(env).tfvars" -out=tfplan -input=false
+              terraform apply -input=false -auto-approve tfplan
+            displayName: "Terraform Apply UAT"
 
   - stage: PROD
+    displayName: "Deploy to PROD"
     dependsOn: UAT
     condition: succeeded()
     variables:
-      - name: env
-        value: 'prod'
+      env: prod
     jobs:
       - job: DeployProd
+        displayName: "Terraform PROD"
         steps:
           - checkout: self
           - script: |
+              echo "Deploying to PROD environment"
               terraform init
-              terraform plan -var-file="env/$(env).tfvars" -out=tfplan
-              terraform apply -auto-approve tfplan
+              terraform plan -var-file="env/$(env).tfvars" -out=tfplan -input=false
+              terraform apply -input=false -auto-approve tfplan
+            displayName: "Terraform Apply PROD"
