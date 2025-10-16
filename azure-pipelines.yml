@@ -9,7 +9,7 @@ trigger: none   # Manual trigger only (optional: change to branches if needed)
 pool:
   name: IRM2
   demands:
-    - Agent.Name -equals workagent_1   # your self-hosted Linux agent name
+    - Agent.Name -equals workagent3   # your self-hosted Linux agent name
 
 stages:# ==============================================
 # Azure DevOps Pipeline for Terraform (Linux Agent)
