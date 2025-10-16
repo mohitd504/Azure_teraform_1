@@ -3,7 +3,7 @@ trigger: none
 pool:
   name: IRM2
   demands:
-    - Agent.Name -equals Work
+    - Agent.Name -equals workagent_1
 
 stages:
 
@@ -20,13 +20,13 @@ stages:
           - task: AzureCLI@2
             displayName: "Terraform Apply DEV"
             inputs:
-              azureSubscription: 'RD-SP'          # Your service connection
-              scriptType: 'ps'                     # Use PowerShell
+              azureSubscription: 'RD-SP'          # Your service connection name
+              scriptType: 'bash'                   # ✅ Changed from ps to bash
               scriptLocation: 'inlineScript'
               inlineScript: |
-                Write-Host "Deploying to DEV environment"
-                terraform init
-                terraform plan -var-file="env/$(env).tfvars" -out=tfplan -input=false
+                echo "🚀 Deploying to DEV environment"
+                terraform init -input=false
+                terraform plan -var-file="env/${env}.tfvars" -out=tfplan -input=false
                 terraform apply -input=false -auto-approve tfplan
 
   - stage: UAT
@@ -45,12 +45,12 @@ stages:
             displayName: "Terraform Apply UAT"
             inputs:
               azureSubscription: 'RD-SP'
-              scriptType: 'ps'
+              scriptType: 'bash'                   # ✅ Linux uses bash
               scriptLocation: 'inlineScript'
               inlineScript: |
-                Write-Host "Deploying to UAT environment"
-                terraform init
-                terraform plan -var-file="env/$(env).tfvars" -out=tfplan -input=false
+                echo "🚀 Deploying to UAT environment"
+                terraform init -input=false
+                terraform plan -var-file="env/${env}.tfvars" -out=tfplan -input=false
                 terraform apply -input=false -auto-approve tfplan
 
   - stage: PROD
@@ -69,10 +69,10 @@ stages:
             displayName: "Terraform Apply PROD"
             inputs:
               azureSubscription: 'RD-SP'
-              scriptType: 'ps'
+              scriptType: 'bash'                   # ✅ Linux-compatible
               scriptLocation: 'inlineScript'
               inlineScript: |
-                Write-Host "Deploying to PROD environment"
-                terraform init
-                terraform plan -var-file="env/$(env).tfvars" -out=tfplan -input=false
+                echo "🚀 Deploying to PROD environment"
+                terraform init -input=false
+                terraform plan -var-file="env/${env}.tfvars" -out=tfplan -input=false
                 terraform apply -input=false -auto-approve tfplan
