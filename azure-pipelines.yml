@@ -1,7 +1,7 @@
 trigger: none
 
 pool:
-  name: IRM2             # Your Linux agent pool name
+  name: IRM2
   demands:
     - Agent.Name -equals workagent3
 
@@ -19,17 +19,10 @@ stages:
       steps:
         - checkout: self
 
-        # Optional debug step: verify repo structure
-        - script: |
-            echo "📁 Current directory: $(pwd)"
-            echo "📂 Files in repo:"
-            ls -R
-          displayName: "Debug: Verify GitHub checkout"
-
         - task: AzureCLI@2
           displayName: "Terraform Apply DEV"
           inputs:
-            azureSubscription: 'RD-SP'   # your Azure DevOps service connection name
+            azureSubscription: 'RD-SP'   # Your service connection name
             scriptType: 'bash'
             scriptLocation: 'inlineScript'
             inlineScript: |
@@ -37,9 +30,9 @@ stages:
               echo "🚀 Deploying to ${ENV} environment"
               echo "Using tfvars file: env/${ENV}.tfvars"
 
-              # Pass subscription and tenant from Azure CLI → Terraform
-              export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-              export ARM_TENANT_ID=$(az account show --query tenantId -o tsv)
+              # Trim Windows-style CRLF endings (\r)
+              export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv | tr -d '\r')
+              export ARM_TENANT_ID=$(az account show --query tenantId -o tsv | tr -d '\r')
               export ARM_USE_CLI=true
 
               echo "✅ Subscription ID: $ARM_SUBSCRIPTION_ID"
@@ -75,8 +68,8 @@ stages:
               echo "🚀 Deploying to ${ENV} environment"
               echo "Using tfvars file: env/${ENV}.tfvars"
 
-              export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-              export ARM_TENANT_ID=$(az account show --query tenantId -o tsv)
+              export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv | tr -d '\r')
+              export ARM_TENANT_ID=$(az account show --query tenantId -o tsv | tr -d '\r')
               export ARM_USE_CLI=true
 
               echo "✅ Subscription ID: $ARM_SUBSCRIPTION_ID"
@@ -112,8 +105,8 @@ stages:
               echo "🚀 Deploying to ${ENV} environment"
               echo "Using tfvars file: env/${ENV}.tfvars"
 
-              export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-              export ARM_TENANT_ID=$(az account show --query tenantId -o tsv)
+              export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv | tr -d '\r')
+              export ARM_TENANT_ID=$(az account show --query tenantId -o tsv | tr -d '\r')
               export ARM_USE_CLI=true
 
               echo "✅ Subscription ID: $ARM_SUBSCRIPTION_ID"
