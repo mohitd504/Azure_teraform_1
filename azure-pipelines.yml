@@ -1,101 +1,124 @@
-# ==========================================================
-# Azure DevOps Pipeline for Terraform (Linux self-hosted)
-# Environments: DEV → UAT → PROD
-# Uses GitHub as repo source
-# ==========================================================
-
-trigger: none    # Manual trigger (change to branches if needed)
+trigger: none
 
 pool:
-  name: IRM2
+  name: IRM2             # Your Linux agent pool name
   demands:
-  - Agent.Name -equals workagent3
+    - Agent.Name -equals workagent3
 
 stages:
-# -------------------- DEV --------------------
+# =======================================================
+# 🚀 STAGE 1: DEV
+# =======================================================
 - stage: DEV
   displayName: "Deploy to DEV"
   variables:
-    env: dev
+    ENV: dev
   jobs:
-  - job: DeployDev
-    displayName: "Terraform Apply (DEV)"
-    steps:
-    - checkout: self
+    - job: DeployDev
+      displayName: "Terraform Apply (DEV)"
+      steps:
+        - checkout: self
 
-    - script: |
-        echo "📁 Current directory:"
-        pwd
-        echo "📂 Files in repo:"
-        ls -R
-      displayName: "Debug: Verify GitHub checkout"
+        # Optional debug step: verify repo structure
+        - script: |
+            echo "📁 Current directory: $(pwd)"
+            echo "📂 Files in repo:"
+            ls -R
+          displayName: "Debug: Verify GitHub checkout"
 
-    - task: AzureCLI@2
-      displayName: "Terraform Apply DEV"
-      inputs:
-        azureSubscription: 'RD-SP'
-        scriptType: 'bash'
-        scriptLocation: 'inlineScript'
-        inlineScript: |
-          set -e
-          echo "🚀 Deploying to ${ENV} environment"
-          echo "Using tfvars file: env/${ENV}.tfvars"
+        - task: AzureCLI@2
+          displayName: "Terraform Apply DEV"
+          inputs:
+            azureSubscription: 'RD-SP'   # your Azure DevOps service connection name
+            scriptType: 'bash'
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              set -e
+              echo "🚀 Deploying to ${ENV} environment"
+              echo "Using tfvars file: env/${ENV}.tfvars"
 
-          # If Terraform files are at repo root (as your logs show), no cd needed
-          terraform init -input=false
-          terraform plan -var-file="env/${ENV}.tfvars" -out=tfplan -input=false
-          terraform apply -input=false -auto-approve tfplan
+              # Pass subscription and tenant from Azure CLI → Terraform
+              export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+              export ARM_TENANT_ID=$(az account show --query tenantId -o tsv)
+              export ARM_USE_CLI=true
 
-# -------------------- UAT --------------------
+              echo "✅ Subscription ID: $ARM_SUBSCRIPTION_ID"
+              echo "✅ Tenant ID: $ARM_TENANT_ID"
+
+              terraform init -input=false
+              terraform plan -var-file="env/${ENV}.tfvars" -out=tfplan -input=false
+              terraform apply -input=false -auto-approve tfplan
+
+# =======================================================
+# 🚀 STAGE 2: UAT
+# =======================================================
 - stage: UAT
   displayName: "Deploy to UAT"
   dependsOn: DEV
   condition: succeeded()
   variables:
-    env: uat
+    ENV: uat
   jobs:
-  - job: DeployUat
-    displayName: "Terraform Apply (UAT)"
-    steps:
-    - checkout: self
+    - job: DeployUat
+      displayName: "Terraform Apply (UAT)"
+      steps:
+        - checkout: self
 
-    - task: AzureCLI@2
-      displayName: "Terraform Apply UAT"
-      inputs:
-        azureSubscription: 'RD-SP'
-        scriptType: 'bash'
-        scriptLocation: 'inlineScript'
-        inlineScript: |
-          set -e
-          echo "🚀 Deploying to ${ENV} environment"
-          echo "Using tfvars file: env/${ENV}.tfvars"
-          terraform init -input=false
-          terraform plan -var-file="env/${ENV}.tfvars" -out=tfplan -input=false
-          terraform apply -input=false -auto-approve tfplan
+        - task: AzureCLI@2
+          displayName: "Terraform Apply UAT"
+          inputs:
+            azureSubscription: 'RD-SP'
+            scriptType: 'bash'
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              set -e
+              echo "🚀 Deploying to ${ENV} environment"
+              echo "Using tfvars file: env/${ENV}.tfvars"
 
-# -------------------- PROD --------------------
+              export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+              export ARM_TENANT_ID=$(az account show --query tenantId -o tsv)
+              export ARM_USE_CLI=true
+
+              echo "✅ Subscription ID: $ARM_SUBSCRIPTION_ID"
+              echo "✅ Tenant ID: $ARM_TENANT_ID"
+
+              terraform init -input=false
+              terraform plan -var-file="env/${ENV}.tfvars" -out=tfplan -input=false
+              terraform apply -input=false -auto-approve tfplan
+
+# =======================================================
+# 🚀 STAGE 3: PROD
+# =======================================================
 - stage: PROD
   displayName: "Deploy to PROD"
   dependsOn: UAT
   condition: succeeded()
   variables:
-    env: prod
+    ENV: prod
   jobs:
-  - job: DeployProd
-    displayName: "Terraform Apply (PROD)"
-    steps:
-    - checkout: self
+    - job: DeployProd
+      displayName: "Terraform Apply (PROD)"
+      steps:
+        - checkout: self
 
-    - task: AzureCLI@2
-      displayName: "Terraform Apply PROD"
-      inputs:
-        azureSubscription: 'RD-SP'
-        scriptType: 'bash'
-        scriptLocation: 'inlineScript'
-        inlineScript: |
-          set -e
-          echo "🚀 Deploying to ${ENV} environment"
-          echo "Using tfvars file: env/${ENV}.tfvars"
-          terraform init -input=false
-          terraform plan -var-file="env/${ENV}.tfvars" -out=tfplan -input=false
-          terraform apply -input=false -auto-approve tfplan
+        - task: AzureCLI@2
+          displayName: "Terraform Apply PROD"
+          inputs:
+            azureSubscription: 'RD-SP'
+            scriptType: 'bash'
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              set -e
+              echo "🚀 Deploying to ${ENV} environment"
+              echo "Using tfvars file: env/${ENV}.tfvars"
+
+              export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+              export ARM_TENANT_ID=$(az account show --query tenantId -o tsv)
+              export ARM_USE_CLI=true
+
+              echo "✅ Subscription ID: $ARM_SUBSCRIPTION_ID"
+              echo "✅ Tenant ID: $ARM_TENANT_ID"
+
+              terraform init -input=false
+              terraform plan -var-file="env/${ENV}.tfvars" -out=tfplan -input=false
+              terraform apply -input=false -auto-approve tfplan
