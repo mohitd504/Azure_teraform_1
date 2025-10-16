@@ -1,16 +1,18 @@
-# ==============================================
-# Azure DevOps Pipeline for Terraform (Linux Agent)
+# ==========================================================
+# Azure DevOps Pipeline for Terraform (Linux self-hosted)
 # Environments: DEV → UAT → PROD
-# ==============================================
+# Uses GitHub as repo source
+# ==========================================================
 
-trigger: none
+trigger: none    # Manual trigger (change to branches if needed)
 
 pool:
   name: IRM2
   demands:
-  - Agent.Name -equals workagent3  # 👈 Make sure there are no tabs before this line
+  - Agent.Name -equals workagent3
 
 stages:
+# -------------------- DEV --------------------
 - stage: DEV
   displayName: "Deploy to DEV"
   variables:
@@ -36,13 +38,15 @@ stages:
         scriptLocation: 'inlineScript'
         inlineScript: |
           set -e
-          echo "🚀 Deploying to DEV environment"
-          echo "Using tfvars file: env/${env}.tfvars"
-          cd terraform || cd .
+          echo "🚀 Deploying to ${ENV} environment"
+          echo "Using tfvars file: env/${ENV}.tfvars"
+
+          # If Terraform files are at repo root (as your logs show), no cd needed
           terraform init -input=false
-          terraform plan -var-file="env/${env}.tfvars" -out=tfplan -input=false
+          terraform plan -var-file="env/${ENV}.tfvars" -out=tfplan -input=false
           terraform apply -input=false -auto-approve tfplan
 
+# -------------------- UAT --------------------
 - stage: UAT
   displayName: "Deploy to UAT"
   dependsOn: DEV
@@ -63,13 +67,13 @@ stages:
         scriptLocation: 'inlineScript'
         inlineScript: |
           set -e
-          echo "🚀 Deploying to UAT environment"
-          echo "Using tfvars file: env/${env}.tfvars"
-          cd terraform || cd .
+          echo "🚀 Deploying to ${ENV} environment"
+          echo "Using tfvars file: env/${ENV}.tfvars"
           terraform init -input=false
-          terraform plan -var-file="env/${env}.tfvars" -out=tfplan -input=false
+          terraform plan -var-file="env/${ENV}.tfvars" -out=tfplan -input=false
           terraform apply -input=false -auto-approve tfplan
 
+# -------------------- PROD --------------------
 - stage: PROD
   displayName: "Deploy to PROD"
   dependsOn: UAT
@@ -90,9 +94,8 @@ stages:
         scriptLocation: 'inlineScript'
         inlineScript: |
           set -e
-          echo "🚀 Deploying to PROD environment"
-          echo "Using tfvars file: env/${env}.tfvars"
-          cd terraform || cd .
+          echo "🚀 Deploying to ${ENV} environment"
+          echo "Using tfvars file: env/${ENV}.tfvars"
           terraform init -input=false
-          terraform plan -var-file="env/${env}.tfvars" -out=tfplan -input=false
+          terraform plan -var-file="env/${ENV}.tfvars" -out=tfplan -input=false
           terraform apply -input=false -auto-approve tfplan
