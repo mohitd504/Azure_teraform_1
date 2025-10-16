@@ -1,78 +1,89 @@
-trigger: none
+# ==============================================
+# Azure DevOps Pipeline for Terraform (Linux Agent)
+# Environments: DEV → UAT → PROD
+# Repo Source: GitHub
+# ==============================================
+
+trigger: none   # Manual trigger only (optional: change to branches if needed)
 
 pool:
   name: IRM2
   demands:
-    - Agent.Name -equals workagent_1
+    - Agent.Name -equals Work   # your self-hosted Linux agent name
 
 stages:
 
-  - stage: DEV
-    displayName: "Deploy to DEV"
-    variables:
-      env: dev
-    jobs:
-      - job: DeployDev
-        displayName: "Terraform DEV"
-        steps:
-          - checkout: self
+# -------------------- DEV --------------------
+- stage: DEV
+  displayName: "Deploy to DEV"
+  variables:
+    env: dev
+  jobs:
+    - job: DeployDev
+      displayName: "Terraform Apply (DEV)"
+      steps:
+        # Step 1 — Checkout GitHub repo
+        - checkout: self
 
-          - task: AzureCLI@2
-            displayName: "Terraform Apply DEV"
-            inputs:
-              azureSubscription: 'RD-SP'          # Your service connection name
-              scriptType: 'bash'                   # ✅ Changed from ps to bash
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                echo "🚀 Deploying to DEV environment"
-                terraform init -input=false
-                terraform plan -var-file="env/${env}.tfvars" -out=tfplan -input=false
-                terraform apply -input=false -auto-approve tfplan
+        # Step 2 — Debug to confirm repo structure (optional)
+        - script: |
+            echo "📁 Current directory:"
+            pwd
+            echo "📂 Files in repo:"
+            ls -R
+          displayName: "Debug: Verify GitHub checkout"
 
-  - stage: UAT
-    displayName: "Deploy to UAT"
-    dependsOn: DEV
-    condition: succeeded()
-    variables:
-      env: uat
-    jobs:
-      - job: DeployUat
-        displayName: "Terraform UAT"
-        steps:
-          - checkout: self
+        # Step 3 — Run Terraform
+        - task: AzureCLI@2
+          displayName: "Terraform Apply DEV"
+          inputs:
+            azureSubscription: 'RD-SP'       # Your Azure DevOps service connection
+            scriptType: 'bash'
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              set -e  # stop on any error
+              echo "🚀 Deploying to DEV environment"
+              echo "Using tfvars file: env/${env}.tfvars"
 
-          - task: AzureCLI@2
-            displayName: "Terraform Apply UAT"
-            inputs:
-              azureSubscription: 'RD-SP'
-              scriptType: 'bash'                   # ✅ Linux uses bash
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                echo "🚀 Deploying to UAT environment"
-                terraform init -input=false
-                terraform plan -var-file="env/${env}.tfvars" -out=tfplan -input=false
-                terraform apply -input=false -auto-approve tfplan
+              # Move into Terraform working directory (update if needed)
+              cd terraform || cd .   # adjust if your .tf files are in /terraform
 
-  - stage: PROD
-    displayName: "Deploy to PROD"
-    dependsOn: UAT
-    condition: succeeded()
-    variables:
-      env: prod
-    jobs:
-      - job: DeployProd
-        displayName: "Terraform PROD"
-        steps:
-          - checkout: self
+              terraform init -input=false
+              terraform plan -var-file="env/${env}.tfvars" -out=tfplan -input=false
+              terraform apply -input=false -auto-approve tfplan
 
-          - task: AzureCLI@2
-            displayName: "Terraform Apply PROD"
-            inputs:
-              azureSubscription: 'RD-SP'
-              scriptType: 'bash'                   # ✅ Linux-compatible
-              scriptLocation: 'inlineScript'
-              inlineScript: |
-                echo "🚀 Deploying to PROD environment"
-                terraform init -input=false
-                terraform plan -var-file="env/${env}.tfvars" -out=tfplan -input=false
-                terraform apply -input=false -auto-approve tfplan
+# -------------------- UAT --------------------
+- stage: UAT
+  displayName: "Deploy to UAT"
+  dependsOn: DEV
+  condition: succeeded()
+  variables:
+    env: uat
+  jobs:
+    - job: DeployUat
+      displayName: "Terraform Apply (UAT)"
+      steps:
+        - checkout: self
+        - task: AzureCLI@2
+          displayName: "Terraform Apply UAT"
+          inputs:
+            azureSubscription: 'RD-SP'
+            scriptType: 'bash'
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              set -e
+              echo "🚀 Deploying to UAT environment"
+              echo "Using tfvars file: env/${env}.tfvars"
+              cd terraform || cd .
+              terraform init -input=false
+              terraform plan -var-file="env/${env}.tfvars" -out=tfplan -input=false
+              terraform apply -input=false -auto-approve tfplan
+
+# -------------------- PROD --------------------
+- stage: PROD
+  displayName: "Deploy to PROD"
+  dependsOn: UAT
+  condition: succeeded()
+  variables:
+    env: prod
+  jobs:
